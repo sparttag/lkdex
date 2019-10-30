@@ -16,5 +16,10 @@ wallet/sbin/testdata
 coverage.txt
 profile.out
 dex/order.db
-contract/
-!contract/dex.cpp
+contract/CMakeCache.txt
+contract/CMakeFiles/
+contract/Makefile
+contract/cmake_install.cmake
+contract/output.abi
+contract/output.hex
+contract/output.wasm
