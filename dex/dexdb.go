@@ -5,10 +5,10 @@ import (
 	"math/big"
 
 	"github.com/jinzhu/gorm"
-	"github.com/lianxiangcloud/lkdex/types"
 	"github.com/lianxiangcloud/linkchain/libs/common"
 	"github.com/lianxiangcloud/linkchain/libs/hexutil"
 	"github.com/lianxiangcloud/linkchain/libs/log"
+	"github.com/lianxiangcloud/lkdex/types"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -44,7 +44,7 @@ type OrderModel struct {
 	AmountGive string          `gorm:"not null"`
 	Nonce      sql.NullInt64   `gorm:"not null"`
 	Expires    sql.NullInt64   `gorm:"not null"`
-	User       string          `gorm:"type:char(42);not null"`
+	Maker      string          `gorm:"type:char(42);not null"`
 	R          string          `gorm:"type:char(34);not null"`
 	S          string          `gorm:"type:char(34);not null"`
 	V          string          `gorm:"type:char(4);not null"`
@@ -91,7 +91,7 @@ func (o *OrderModel) ToSignOrder() (*types.SignOrder, error) {
 			AmountGive: (*hexutil.Big)(amountGive),
 			Expires:    (hexutil.Uint64)(o.Expires.Int64),
 			Nonce:      (hexutil.Uint64)(o.Nonce.Int64),
-			User:       common.HexToAddress(o.User),
+			Maker:      common.HexToAddress(o.Maker),
 		},
 		V: (*hexutil.Big)(v),
 		S: (*hexutil.Big)(s),
@@ -125,7 +125,7 @@ func (db *SQLDBBackend) CreateOrder(order *types.SignOrder, state uint64) error 
 		AmountGive: order.AmountGive.String(),
 		Nonce:      sql.NullInt64{(int64)(order.Nonce), true},
 		Expires:    sql.NullInt64{(int64)(order.Expires), true},
-		User:       order.User.Hex(),
+		Maker:      order.Maker.Hex(),
 		R:          order.R.String(),
 		S:          order.S.String(),
 		V:          order.V.String(),

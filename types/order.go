@@ -18,19 +18,19 @@ type Order struct {
 	AmountGive *hexutil.Big   `json:"amountGive"`
 	Expires    hexutil.Uint64 `json:"expires"`
 	Nonce      hexutil.Uint64 `json:"nonce"`
-	User       common.Address `json:"user"`
+	Maker      common.Address `json:"maker"`
 }
 
 //Adaptation contract to generate hash
 func (r *Order) OrderToHash() common.Hash {
-	b := fmt.Sprintf(`{"amountGet":"%s","amountGive":"%s","expires":"%d","nonce":%d,"tokenGet":"%s","tokenGive":"%s","user":"%s"}`,
+	b := fmt.Sprintf(`{"amountGet":"%s","amountGive":"%s","expires":"%d","nonce":%d,"tokenGet":"%s","tokenGive":"%s","maker":"%s"}`,
 		r.AmountGet.ToInt().String(),
 		r.AmountGive.ToInt().String(),
 		uint64(r.Expires),
 		uint64(r.Nonce),
 		r.TokenGet.Hex(),
 		r.TokenGive.Hex(),
-		r.User.Hex(),
+		r.Maker.Hex(),
 	)
 	return common.BytesToHash(crypto.Keccak256([]byte(b)))
 }

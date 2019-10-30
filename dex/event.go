@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strconv"
 
-	"github.com/lianxiangcloud/lkdex/types"
 	"github.com/lianxiangcloud/linkchain/libs/common"
 	"github.com/lianxiangcloud/linkchain/libs/hexutil"
 	"github.com/lianxiangcloud/linkchain/libs/log"
 	"github.com/lianxiangcloud/linkchain/libs/rpc"
 	"github.com/lianxiangcloud/linkchain/rpc/filters"
 	lktypes "github.com/lianxiangcloud/linkchain/types"
+	"github.com/lianxiangcloud/lkdex/types"
 )
 
 type DexSubscription struct {
@@ -73,23 +72,17 @@ type OrderRet struct {
 	AmountGet  string         `json:"amountGet"`
 	TokenGive  common.Address `json:"tokenGive"`
 	AmountGive string         `json:"amountGive"`
-	Expires    string         `json:"expires"`
+	Expires    uint64         `json:"expires"`
 	Nonce      uint64         `json:"nonce"`
-	User       common.Address `json:"user"`
+	Maker      common.Address `json:"maker"`
 }
 
 func (o *OrderRet) ToOrder() (*types.Order, error) {
 	order := types.Order{
 		TokenGet:  o.TokenGet,
 		TokenGive: o.TokenGive,
-		User:      o.User,
+		Maker:     o.Maker,
 	}
-
-	expires, err := strconv.ParseUint(o.Expires, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("Unmarshal AmountGet Error")
-	}
-	order.Expires = (hexutil.Uint64)(expires)
 
 	amountGet, ok := new(big.Int).SetString(o.AmountGet, 0)
 	if !ok {

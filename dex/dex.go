@@ -5,12 +5,12 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/lianxiangcloud/lkdex/config"
-	"github.com/lianxiangcloud/lkdex/types"
 	"github.com/lianxiangcloud/linkchain/libs/common"
 	"github.com/lianxiangcloud/linkchain/libs/hexutil"
 	"github.com/lianxiangcloud/linkchain/libs/log"
 	"github.com/lianxiangcloud/linkchain/rpc/rtypes"
+	"github.com/lianxiangcloud/lkdex/config"
+	"github.com/lianxiangcloud/lkdex/types"
 )
 
 var (
@@ -107,7 +107,7 @@ func NewDex(config *config.Config, logger log.Logger, db *SQLDBBackend) (*Dex, e
 func (dex *Dex) SignDexOrder(order *types.Order) ([]byte, error) {
 
 	hash := order.OrderToHash()
-	sign, err := WalletSignHash(order.User, hash)
+	sign, err := WalletSignHash(order.Maker, hash)
 	if err != nil {
 		dex.Logger.Debug("walletSignHashErr", "order", order)
 		return nil, err
@@ -172,7 +172,7 @@ func (dex *Dex) DexPostOrder(order *types.SignOrder) (common.Hash, error) {
 	callData := []byte("postOrder|" + string(callArgs))
 	dex.Logger.Debug("PostOrder", "call", string(callData))
 
-	return dex.DexPostRequest(order.User, callData)
+	return dex.DexPostRequest(order.Maker, callData)
 }
 
 func (dex *Dex) DexTrade(a common.Address, order *types.SignOrder, amount *hexutil.Big) (common.Hash, error) {
@@ -194,7 +194,7 @@ func (dex *Dex) DexCancelOrder(order *types.SignOrder) (common.Hash, error) {
 	callData := []byte("cancelOrder|" + string(callArgs))
 	dex.Logger.Debug("cancelOrder", "call", string(callData))
 
-	return dex.DexPostRequest(order.User, callData)
+	return dex.DexPostRequest(order.Maker, callData)
 }
 
 func (dex *Dex) DexAvailableVolume(order *types.Order) (*big.Int, error) {
@@ -206,7 +206,7 @@ func (dex *Dex) DexAvailableVolume(order *types.Order) (*big.Int, error) {
 	callData := []byte("availableVolume|" + string(callArgs))
 	dex.Logger.Debug("availableVolume", "call", string(callData))
 
-	result, err := dex.DexCallRequest(order.User, callData)
+	result, err := dex.DexCallRequest(order.Maker, callData)
 	vol, err := hexutil.DecodeBig(string(result))
 	if err != nil {
 		return nil, err
