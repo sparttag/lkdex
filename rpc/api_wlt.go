@@ -3,10 +3,10 @@ package rpc
 import (
 	"math/big"
 
-	"github.com/lianxiangcloud/lkdex/dex"
-	"github.com/lianxiangcloud/lkdex/types"
 	"github.com/lianxiangcloud/linkchain/libs/common"
 	"github.com/lianxiangcloud/linkchain/libs/hexutil"
+	"github.com/lianxiangcloud/lkdex/dex"
+	"github.com/lianxiangcloud/lkdex/types"
 )
 
 // PrivateWalletAPI provides an API to send Dex contract transaction.
@@ -57,7 +57,12 @@ func (s *PrivateWalletAPI) PostSignOrder(order *types.SignOrder) ([]common.Hash,
 	return []common.Hash{hash, orderHash}, nil
 }
 
-func (s *PrivateWalletAPI) SignOrder(order *types.Order) (*types.SignOrder, error) {
+type SignOrderRet struct {
+	SO   *types.SignOrder `json:"Order"`
+	Hash common.Hash      `json:"hash"`
+}
+
+func (s *PrivateWalletAPI) SignOrder(order *types.Order) (*SignOrderRet, error) {
 
 	sig, err := s.dex.SignDexOrder(order)
 	if err != nil {
@@ -69,7 +74,8 @@ func (s *PrivateWalletAPI) SignOrder(order *types.Order) (*types.SignOrder, erro
 		S:     (*hexutil.Big)(new(big.Int).SetBytes(sig[32:64])),
 		V:     (*hexutil.Big)(new(big.Int).SetBytes([]byte{sig[64] + 27})),
 	}
-	return &signOrder, nil
+
+	return &SignOrderRet{&signOrder, signOrder.OrderToHash()}, nil
 }
 
 func (s *PrivateWalletAPI) Trade(a common.Address, order *types.SignOrder, amount *hexutil.Big) ([]common.Hash, error) {
