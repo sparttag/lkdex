@@ -150,6 +150,6 @@ func callJSONRPC(daemonClient *DaemonClient, method string, params interface{}) 
 	if err != nil {
 		return nil, fmt.Errorf("read response body: %v", err)
 	}
-
+	log.Debug("CallJSONRPC", "return", string(body))
 	return body, nil
 }
