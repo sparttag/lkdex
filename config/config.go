@@ -190,7 +190,7 @@ type Config struct {
 	// Top level options use an anonymous struct
 	BaseConfig   `mapstructure:",squash"`
 	Daemon       *DaemonConfig     `mapstructure:"daemon"`
-	WalletDaemon *DaemonConfig     `mapstructure:"walletDaemon"`
+	WalletDaemon *DaemonConfig     `mapstructure:"wallet_daemon"`
 	RPC          *RPCConfig        `mapstructure:"rpc"`
 	Log          *log.RotateConfig `mapstructure:"log"`
 }
