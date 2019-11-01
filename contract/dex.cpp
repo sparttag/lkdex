@@ -91,23 +91,16 @@ void Dex::exchange(const tc::Address& maker, const tc::Address& taker,
 	setDepositAmount(maker, tokenGive,  getDepositAmount(maker, tokenGive) - amountGive*amount/amountGet);
 }
 
-
 tc::Hash getOrderHash(const Order& order) {
 	char* orderData = tc::json::Marshal(order);
 	return tc::Hash{TC_Keccak256(orderData)};
 }
 
-bool checkOrder(const Order& order){
-	if (order.amountGet <= 0){
-		return false;
-	}
-	if (order.amountGive <= 0){
-		return false;
-	}
-	if (order.expires <= TC_Now()){
-		return false;
-	}
-	return true;
+void checkOrder(const Order& order){
+	TC_RequireWithMsg(order.tokenGive != order.tokenGet, "order format error: tokenGive == tokenGet");
+	TC_RequireWithMsg(order.amountGet > 0, "order format error: amountGet <= 0");
+	TC_RequireWithMsg(order.amountGive > 0, "order format error: amountGive <= 0");
+	TC_RequireWithMsg(order.expires > TC_Now(), "order error: order expired");
 }
 
 tc::BInt min(const tc::BInt& a, const tc::BInt& b){
@@ -128,11 +121,11 @@ void Dex::postOrder(const SignOrder& signOrder){
 	TC_Payable(false);
 
 	const Order& order = signOrder.order;
+	checkOrder(order);
+
 	tc::Hash hash = getOrderHash(signOrder.order);
-	TC_Prints(hash.toString());
 	OrderState state = orderState.get(hash);
 
-	TC_RequireWithMsg(checkOrder(order), "Order incorrect data or expired");
 	TC_RequireWithMsg(state.filledAmount < order.amountGet, "order is already finished");
 	tc::Address addr = tc::Sign::recover(hash, signOrder.v, signOrder.r, signOrder.s);
 	TC_RequireWithMsg(addr == order.maker, "Order sign error");
@@ -156,16 +149,13 @@ void Dex::trade(const SignOrder& signOrder, const tc::BInt& amount){
 	TC_Payable(false);
 
 	const Order& order = signOrder.order;
+	checkOrder(order);
+
 	tc::Hash hash = getOrderHash(signOrder.order);
-	TC_Prints(hash.toString());
 	OrderState state = orderState.get(hash);
-	TC_RequireWithMsg(checkOrder(order), "Order incorrect data or expired");
-
 	TC_RequireWithMsg(state.filledAmount < order.amountGet, "order is already finished");
-
 	tc::Address addr = tc::Sign::recover(hash, signOrder.v, signOrder.r, signOrder.s);
 	TC_RequireWithMsg(addr == order.maker, "Order sign error");
-
 	TC_RequireWithMsg(!state.isCancel, "Order is canceled");
 
 	tc::BInt takerBalance = min(amount, getDepositAmount(tc::App::getInstance()->sender(), order.tokenGet));
@@ -185,6 +175,10 @@ void Dex::trade(const SignOrder& signOrder, const tc::BInt& amount){
 
 void Dex::cancelOrder(const SignOrder& signOrder){
 	TC_Payable(false);
+
+	const Order& order = signOrder.order;
+	checkOrder(order);
+
 	tc::Hash hash = getOrderHash(signOrder.order);
 	tc::Address addr = tc::Sign::recover(hash, signOrder.v, signOrder.r, signOrder.s);
 
@@ -217,6 +211,11 @@ void Dex::deposit(){
 
 tc::BInt Dex::availableVolume(const Order& order){
 	TC_Payable(false);
+
+	if(order.amountGive <= 0 || order.amountGet <=0 || order.tokenGet == order.tokenGive){
+		TC_RequireWithMsg(false, "order format error");
+	}
+
 	tc::Hash hash = getOrderHash(order);
 	OrderState state = orderState.get(hash);
 	if(state.isCancel || order.expires <= TC_Now()){
@@ -228,9 +227,6 @@ tc::BInt Dex::availableVolume(const Order& order){
 tc::BInt Dex::usedVolumeByHash(const tc::Hash& hash){
 	TC_Payable(false);
 	OrderState state = orderState.get(hash);
-	if(state.isCancel){
-
-	}
 	return state.filledAmount;
 }
 
@@ -238,15 +234,29 @@ tc::BInt Dex::usedVolumeByHash(const tc::Hash& hash){
 std::string Dex::testTakerTrade(const Order& order, const tc::Address& taker, const tc::BInt& amount){
 	TC_Payable(false);
 
+	if(order.amountGive <= 0 || order.amountGet <=0 || order.tokenGet == order.tokenGive){
+		return "fail: order format error";
+	}
+
+	if (order.expires <= TC_Now()){
+		return "fail: order is expired";
+	}
+
+	tc::Hash hash = getOrderHash(order);
+	OrderState state = orderState.get(hash);
+	if(state.isCancel){
+		return "fail: order is canceled";
+	}
+
 	tc::BInt takerBalance = min(amount, getDepositAmount(taker, order.tokenGet));
 	tc::BInt deal = min(takerBalance*order.amountGive/order.amountGet, 
 			availableVolume(order), 
 			getDepositAmount(order.maker, order.tokenGive));
 
 	if(deal <= 0){
-		return "fail";
+		return "fail: deal amount is zero";
 	}
-	return "success";
+	return "success: this transaction can be executed";
 }
 
 std::string Dex::testTrade(const Order& order, const tc::BInt& amount){

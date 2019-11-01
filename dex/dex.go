@@ -2,6 +2,7 @@ package dex
 
 import (
 	"encoding/json"
+	"errors"
 	"math/big"
 	"sync"
 
@@ -62,6 +63,26 @@ func Ret(ret []byte) (string, error) {
 	return v.Ret, err
 }
 
+func CheckOrder(order *types.Order) error {
+	zero := big.NewInt(0)
+	if order == nil {
+		return errors.New("order is nil")
+	}
+
+	if (*big.Int)(order.AmountGet).Cmp(zero) <= 0 {
+		return errors.New("order format error: amountGet less or equal 0")
+	}
+
+	if (*big.Int)(order.AmountGive).Cmp(zero) <= 0 {
+		return errors.New("order format error: amountGive less or equal 0")
+	}
+
+	if order.TokenGet == order.TokenGive {
+		return errors.New("order format error: TokenGet == TokenGive")
+	}
+	return nil
+}
+
 // Dex dex
 type Dex struct {
 	Logger log.Logger
@@ -84,7 +105,7 @@ func NewDex(config *config.Config, logger log.Logger, db *SQLDBBackend) (*Dex, e
 		Logger: logger,
 		dexSub: dexSub,
 	}
-	dex.Logger.Info("Dex create")
+	dex.Logger.Info("Dex client create")
 	db.AutoMigrate(&OrderModel{}, &TradeModel{}, &AccountModel{}, &BlockSyncModel{})
 	db.CreateSync()
 	db.SetLogger(logger)
@@ -106,10 +127,16 @@ func NewDex(config *config.Config, logger log.Logger, db *SQLDBBackend) (*Dex, e
 
 func (dex *Dex) SignDexOrder(order *types.Order) ([]byte, error) {
 
+	err := CheckOrder(order)
+	if err != nil {
+		dex.Logger.Debug("walletSignHashErr", "order", order, "err", err.Error())
+		return nil, err
+	}
+
 	hash := order.OrderToHash()
 	sign, err := WalletSignHash(order.Maker, hash)
 	if err != nil {
-		dex.Logger.Debug("walletSignHashErr", "order", order)
+		dex.Logger.Debug("walletSignHashErr", "order", order, "err", err.Error())
 		return nil, err
 	}
 
@@ -139,6 +166,11 @@ func (dex *Dex) DexDeposit(a common.Address, token common.Address, amount *hexut
 }
 
 func (dex *Dex) DexWithDraw(a common.Address, token common.Address, amount *hexutil.Big) (common.Hash, error) {
+	zero := big.NewInt(0)
+	if (*big.Int)(amount).Cmp(zero) <= 0 {
+		return common.EmptyHash, errors.New("arg format error: amount less or equal 0")
+	}
+
 	callArgs, err := Args2(token, amount)
 	if err != nil {
 		return common.EmptyHash, err
@@ -163,6 +195,11 @@ func (dex *Dex) DexWithDraw(a common.Address, token common.Address, amount *hexu
 }
 
 func (dex *Dex) DexPostOrder(order *types.SignOrder) (common.Hash, error) {
+	err := CheckOrder(&order.Order)
+	if err != nil {
+		return common.EmptyHash, err
+
+	}
 
 	callArgs, err := Args1(order)
 	if err != nil {
@@ -176,6 +213,16 @@ func (dex *Dex) DexPostOrder(order *types.SignOrder) (common.Hash, error) {
 }
 
 func (dex *Dex) DexTrade(a common.Address, order *types.SignOrder, amount *hexutil.Big) (common.Hash, error) {
+	zero := big.NewInt(0)
+	if (*big.Int)(amount).Cmp(zero) <= 0 {
+		return common.EmptyHash, errors.New("arg format error: amount less or equal 0")
+	}
+
+	err := CheckOrder(&order.Order)
+	if err != nil {
+		return common.EmptyHash, err
+
+	}
 	callArgs, err := Args2(order, amount)
 	if err != nil {
 		return common.EmptyHash, err
@@ -187,6 +234,11 @@ func (dex *Dex) DexTrade(a common.Address, order *types.SignOrder, amount *hexut
 }
 
 func (dex *Dex) DexCancelOrder(order *types.SignOrder) (common.Hash, error) {
+	err := CheckOrder(&order.Order)
+	if err != nil {
+		return common.EmptyHash, err
+
+	}
 	callArgs, err := Args1(order)
 	if err != nil {
 		return common.EmptyHash, err
@@ -198,6 +250,11 @@ func (dex *Dex) DexCancelOrder(order *types.SignOrder) (common.Hash, error) {
 }
 
 func (dex *Dex) DexAvailableVolume(order *types.Order) (*big.Int, error) {
+	err := CheckOrder(order)
+	if err != nil {
+		return nil, err
+	}
+
 	callArgs, err := Args1(order)
 	if err != nil {
 		return nil, err
@@ -216,6 +273,7 @@ func (dex *Dex) DexAvailableVolume(order *types.Order) (*big.Int, error) {
 }
 
 func (dex *Dex) DexUsedVolumeByHash(hash *common.Hash) (*big.Int, error) {
+
 	callArgs, err := Args1(hash)
 	if err != nil {
 		return nil, err
@@ -258,9 +316,35 @@ func (dex *Dex) DexGetDepositAmount(user *common.Address, token *common.Address)
 	return amount, nil
 }
 
-func (dex *Dex) DexTestTakerTrade(order *types.Order, taker common.Address, amount *big.Int) (bool, error) {
+func (dex *Dex) DexTestTakerTrade(order *types.Order, taker common.Address, amount *big.Int) (string, error) {
+	zero := big.NewInt(0)
+	if (*big.Int)(amount).Cmp(zero) <= 0 {
+		return "", errors.New("arg format error: amount less or equal 0")
+	}
 
-	return true, nil
+	err := CheckOrder(order)
+	if err != nil {
+		return "", err
+	}
+
+	callArgs, err := Args3(order, taker, amount)
+	if err != nil {
+		return "", err
+	}
+
+	callData := []byte("testTakerTrade|" + string(callArgs))
+	dex.Logger.Debug("TestTakerTrade", "call", string(callData))
+
+	result, err := dex.DexCallRequest(taker, callData)
+	if err != nil {
+		return "", err
+	}
+	ret, err := Ret(result)
+	if err != nil {
+		return "", err
+	}
+
+	return ret, nil
 }
 
 func (dex *Dex) DexCallRequest(from common.Address, txData []byte) (hexutil.Bytes, error) {

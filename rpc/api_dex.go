@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/lianxiangcloud/linkchain/libs/common"
@@ -30,6 +31,19 @@ type PublicOrderPoolAPI struct {
 func NewPublicOrderPoolAPI(b Backend) *PublicOrderPoolAPI {
 	return &PublicOrderPoolAPI{b, b.GetDex(), b.GetDexDB()}
 }
+func (s *PublicOrderPoolAPI) GetOrderHash(order *types.Order) (common.Hash, error) {
+	if order == nil {
+		return common.EmptyHash, fmt.Errorf("order is nil")
+	}
+	return order.OrderToHash(), nil
+}
+
+func (s *PublicOrderPoolAPI) GetSignOrderHash(order *types.SignOrder) (common.Hash, error) {
+	if order == nil {
+		return common.EmptyHash, fmt.Errorf("order is nil")
+	}
+	return order.OrderToHash(), nil
+}
 
 func (s *PublicOrderPoolAPI) GetOrderByHash(hash common.Hash) (*types.SignOrder, error) {
 	return s.dexDB.ReadOrder(hash)
@@ -39,18 +53,6 @@ func (s *PublicOrderPoolAPI) GetTxPair() ([]TxPair, error) {
 	return nil, nil
 }
 
-/*
-Sell   order
-						price   amount
-						13000	1000
-						12000	1
-						11000	100
-		-------------------------------
-						10000	60
-						 900	 4
-						 8000	50
-Buying order
-*/
 func (s *PublicOrderPoolAPI) GetOrderByTxPair(getToken common.Address, giveToken common.Address, count uint64) ([]*types.SignOrder, error) {
 	return s.dexDB.QueryOrderByTxPair(getToken, giveToken, 0, count)
 }
