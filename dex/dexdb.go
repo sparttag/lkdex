@@ -27,7 +27,7 @@ type BlockSyncModel struct {
 type AccountModel struct {
 	UserID string `gorm:"primary_key;type:char(42)"`
 	Token  string `gorm:"type:char(42)"`
-	Amount string
+	Amount string `gorm:"not null"`
 }
 
 const (
@@ -37,19 +37,20 @@ const (
 )
 
 type OrderModel struct {
-	HashID     string          `gorm:"primary_key;type:char(66)"`
-	TokenGet   string          `gorm:"type:char(42);not null"`
-	AmountGet  string          `gorm:"not null"`
-	TokenGive  string          `gorm:"type:char(42);not null"`
-	AmountGive string          `gorm:"not null"`
-	Nonce      sql.NullInt64   `gorm:"not null"`
-	Expires    sql.NullInt64   `gorm:"not null"`
-	Maker      string          `gorm:"type:char(42);not null"`
-	R          string          `gorm:"type:char(34);not null"`
-	S          string          `gorm:"type:char(34);not null"`
-	V          string          `gorm:"type:char(4);not null"`
-	State      sql.NullInt64   `gorm:"not null"` //0:Sending(not save in block)  1:Trading  2:Finish(Cancel)
-	Price      sql.NullFloat64 `gorm:"type:numeric(225,20);not null"`
+	HashID     string        `gorm:"primary_key;type:char(66)"`
+	TokenGet   string        `gorm:"type:char(42);not null"`
+	AmountGet  string        `gorm:"not null"`
+	TokenGive  string        `gorm:"type:char(42);not null"`
+	AmountGive string        `gorm:"not null"`
+	Nonce      sql.NullInt64 `gorm:"not null"`
+	Expires    sql.NullInt64 `gorm:"not null"`
+	Maker      string        `gorm:"type:char(42);not null"`
+	R          string        `gorm:"type:char(34);not null"`
+	S          string        `gorm:"type:char(34);not null"`
+	V          string        `gorm:"type:char(4);not null"`
+	State      sql.NullInt64 `gorm:"not null"`
+	//0:Unpost(not send to blockchain)  1:Trading  2:Finish(Cancel or fill all amount)
+	Price sql.NullFloat64 `gorm:"type:numeric(225,20);not null"`
 }
 
 type TradeModel struct {
@@ -57,8 +58,20 @@ type TradeModel struct {
 	HashID     string        `gorm:"type:char(66);FOREIGNKEY"` //Order Hash
 	DealAmount string        `gorm:"not null"`                 //Deal amount
 	BlockNum   sql.NullInt64 `gorm:"not null"`                 //Deal BlockNum
-	TxHash     sql.NullInt64 `gorm:"type:char(66);not null"`   //Deal Tx hash
+	TxHash     string        `gorm:"type:char(66);not null"`   //Deal Tx hash
 	Taker      string        `gorm:"type:char(42);not null"`
+}
+
+type AccountRecordModel struct {
+	gorm.Model
+	HashID   string        `gorm:"primary_key;type:char(66)"`
+	BlockNum sql.NullInt64 `gorm:"not null"`               //Deal BlockNum
+	TxHash   string        `gorm:"type:char(66);not null"` //Deal Tx hash
+
+	Account string `gorm:"type:char(42);not null"`
+	Amount  string `gorm:"not null"`               //deposit/withdraw amount
+	Balance string `gorm:"not null"`               //balance after deposit/withdraw
+	Token   string `gorm:"type:char(42);not null"` //token address
 }
 
 func (o *OrderModel) ToSignOrder() (*types.SignOrder, error) {
@@ -168,13 +181,17 @@ func (db *SQLDBBackend) CreateTrade(orderHash common.Hash, DealAmount *big.Int, 
 
 	return nil
 }
+
 func (db *SQLDBBackend) UpdateTrade() error {
+
 	return nil
 }
+
 func (db *SQLDBBackend) ReadTradeByTxHash() error {
 
 	return nil
 }
+
 func (db *SQLDBBackend) ReadTradeByOrder() error {
 
 	return nil

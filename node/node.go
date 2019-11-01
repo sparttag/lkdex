@@ -4,12 +4,12 @@ import (
 	"path/filepath"
 
 	"github.com/jinzhu/gorm"
+	cmn "github.com/lianxiangcloud/linkchain/libs/common"
+	"github.com/lianxiangcloud/linkchain/libs/log"
 	cfg "github.com/lianxiangcloud/lkdex/config"
 	"github.com/lianxiangcloud/lkdex/daemon"
 	"github.com/lianxiangcloud/lkdex/dex"
 	"github.com/lianxiangcloud/lkdex/rpc"
-	cmn "github.com/lianxiangcloud/linkchain/libs/common"
-	"github.com/lianxiangcloud/linkchain/libs/log"
 	_ "github.com/mattn/go-sqlite3"
 )
 

@@ -1,7 +1,8 @@
-[TOC]
-# 使用说明
-
 # 编译
+项目目录下执行`make`
+
+# 使用说明
+使用lkdex需要启用linkchain节点以及钱包节点，具体见[linkchain](https://github.com/lianxiangcloud/linkchain)项目
 
 ## dex相关接口
 ### dex_getDepositAmount
@@ -11,7 +12,6 @@
 - `address` token地址
 #### 返回
 - 抵押金额
-
 #### 示例
 ```shell
 curl -s -X POST http://127.0.0.1:18804 -d '{"jsonrpc":"2.0","method":"dex_getDepositAmount","params":["0xa73810e519e1075010678d706533486d8ecc8000","0x95ccc08ab44ac6d071a0c5911df64ad2394a4123"],"id":67}' -H 'Content-Type:application/json'

@@ -10,14 +10,6 @@ import (
 	"github.com/lianxiangcloud/lkdex/types"
 )
 
-//MaxAmountDecPrecision = 8
-//MaxPriceDecPrecision  = 8
-const (
-	MaxOrderCount         = 20
-	MaxAmountDecPrecision = 8 //trade amount
-	MaxPriceDecPrecision  = 8 //trade
-)
-
 type TxPair [2]common.Address
 
 // PublicTransactionPoolAPI exposes methods for the RPC interface
@@ -46,10 +38,12 @@ func (s *PublicOrderPoolAPI) GetSignOrderHash(order *types.SignOrder) (common.Ha
 }
 
 func (s *PublicOrderPoolAPI) GetOrderByHash(hash common.Hash) (*types.SignOrder, error) {
+
 	return s.dexDB.ReadOrder(hash)
 }
 
 func (s *PublicOrderPoolAPI) GetTxPair() ([]TxPair, error) {
+
 	return nil, nil
 }
 
@@ -57,11 +51,13 @@ func (s *PublicOrderPoolAPI) GetOrderByTxPair(getToken common.Address, giveToken
 	return s.dexDB.QueryOrderByTxPair(getToken, giveToken, 0, count)
 }
 
-func (s *PublicOrderPoolAPI) GetPriceByTxPair(getToken common.Address, giveToken common.Address) (*big.Int, error) {
+func (s *PublicOrderPoolAPI) GetLastTradePriceByTxPair(getToken common.Address, giveToken common.Address) (*big.Int, error) {
+
 	return nil, nil
 }
 
 func (s *PublicOrderPoolAPI) GetDealOrderByTaker(a common.Address, token common.Address) ([]types.Order, error) {
+
 	return nil, nil
 }
 

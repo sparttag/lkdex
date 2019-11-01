@@ -13,7 +13,7 @@ func connectDB(driverName string, dbName string) (*SQLDBBackend, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SQLDBBackend{*db}, nil
+	return &SQLDBBackend{DB: *db}, nil
 }
 
 type User struct {

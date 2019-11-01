@@ -234,7 +234,9 @@ func TestTradeNormal(t *testing.T) {
 			TestUser,
 		}, (*hexutil.Big)(v), (*hexutil.Big)(s), (*hexutil.Big)(r),
 	}
+
 	fmt.Println("order Hash", signOrder.Order.OrderToHash().Hex())
+
 	str, _ := json.Marshal(signOrder)
 	trade := fmt.Sprintf(`trade|{"0":%s,"1":"%s"}`, str, big.NewInt(10000).String())
 	err = CallContract(st, caller, DexContract, trade, nil)
