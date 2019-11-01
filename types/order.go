@@ -23,14 +23,14 @@ type Order struct {
 
 //Adaptation contract to generate hash
 func (r *Order) OrderToHash() common.Hash {
-	b := fmt.Sprintf(`{"amountGet":"%s","amountGive":"%s","expires":"%d","nonce":%d,"tokenGet":"%s","tokenGive":"%s","maker":"%s"}`,
+	b := fmt.Sprintf(`{"amountGet":"%s","amountGive":"%s","expires":%d,"maker":"%s","nonce":%d,"tokenGet":"%s","tokenGive":"%s"}`,
 		r.AmountGet.ToInt().String(),
 		r.AmountGive.ToInt().String(),
 		uint64(r.Expires),
+		r.Maker.Hex(),
 		uint64(r.Nonce),
 		r.TokenGet.Hex(),
 		r.TokenGive.Hex(),
-		r.Maker.Hex(),
 	)
 	return common.BytesToHash(crypto.Keccak256([]byte(b)))
 }
