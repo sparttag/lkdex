@@ -25,9 +25,10 @@ type BlockSyncModel struct {
 }
 
 type AccountModel struct {
-	UserID string `gorm:"primary_key;type:char(42)"`
-	Token  string `gorm:"type:char(42)"`
-	Amount string `gorm:"not null"`
+	UserID string        `gorm:"primary_key;type:char(42)"`
+	Token  string        `gorm:"type:char(42)"`
+	Amount string        `gorm:"not null"`
+	Nonce  sql.NullInt64 `gorm:"not null"`
 }
 
 const (
@@ -263,9 +264,40 @@ func (db *SQLDBBackend) CreateAccountBalance(account common.Address) error {
 	}
 	return db.Create(&AccountModel{UserID: account.Hex()}).Error
 }
+func (db *SQLDBBackend) ReadAccountNonce(account common.Address) (uint64, error) {
+	acc := &AccountModel{}
+	err := db.Model(acc).Where(&AccountModel{UserID: account.Hex()}).First(&acc).Error
+
+	if err != nil {
+		acc = nil
+		if !gorm.IsRecordNotFoundError(err) {
+			return 0, err
+		}
+	}
+	return uint64(acc.Nonce.Int64), nil
+}
+
+func (db *SQLDBBackend) UpdateAccountNonce(account common.Address, nonce uint64) error {
+	//TODO:
+	acc := &AccountModel{UserID: account.Hex()}
+	err := db.First(acc).Error
+	if err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return db.CreateAccountBalance(account)
+		}
+		return err
+	}
+	acc.Nonce = sql.NullInt64{int64(nonce), true}
+	err = db.Save(acc).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (db *SQLDBBackend) ReadAccountBalance(account common.Address) (*AccountModel, error) {
 	acc := &AccountModel{}
-	err := db.Model(&acc).Where(&AccountModel{UserID: account.Hex()}).First(&acc).Error
+	err := db.Model(acc).Where(&AccountModel{UserID: account.Hex()}).First(&acc).Error
 
 	if err != nil {
 		acc = nil

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/lianxiangcloud/linkchain/libs/common"
 	"github.com/lianxiangcloud/linkchain/libs/hexutil"
@@ -13,6 +14,8 @@ import (
 	"github.com/lianxiangcloud/lkdex/config"
 	"github.com/lianxiangcloud/lkdex/types"
 )
+
+const FreshInterval = 5 * time.Second
 
 var (
 	defaultInitBlockHeight = uint64(0)
@@ -91,6 +94,8 @@ type Dex struct {
 	config *config.Config
 	dexSub *DexSubscription
 	//currAccount *common.Address
+	isFreshNonce map[common.Address]bool
+	freshLock    sync.Mutex
 }
 
 func NewDex(config *config.Config, logger log.Logger, db *SQLDBBackend) (*Dex, error) {
@@ -100,10 +105,11 @@ func NewDex(config *config.Config, logger log.Logger, db *SQLDBBackend) (*Dex, e
 		return nil, err
 	}
 	dex := &Dex{
-		config: config,
-		dexDB:  db,
-		Logger: logger,
-		dexSub: dexSub,
+		config:       config,
+		dexDB:        db,
+		Logger:       logger,
+		dexSub:       dexSub,
+		isFreshNonce: make(map[common.Address]bool),
 	}
 	dex.Logger.Info("Dex client create")
 	db.AutoMigrate(&OrderModel{}, &TradeModel{}, &AccountModel{}, &BlockSyncModel{})
@@ -380,16 +386,36 @@ func (dex *Dex) DexPostRequest(from common.Address, txData []byte) (common.Hash,
 	return hash, nil
 }
 
+func (dex *Dex) startFreshTimer(from common.Address) {
+	timer := time.NewTimer(FreshInterval)
+	go func(t *time.Timer) {
+		for {
+			<-t.C
+			for k, v := range dex.isFreshNonce {
+				if v {
+					dex.freshLock.Lock()
+					dex.isFreshNonce[k] = false
+					dex.freshLock.Unlock()
+				}
+			}
+			t.Reset(FreshInterval)
+		}
+	}(timer)
+}
+
+func (dex *Dex) setFresh(from common.Address) {
+	dex.freshLock.Lock()
+	dex.isFreshNonce[from] = true
+	dex.freshLock.Unlock()
+}
+
+func (dex *Dex) resetFresh(from common.Address) {
+	dex.freshLock.Lock()
+	dex.isFreshNonce[from] = false
+	dex.freshLock.Unlock()
+}
+
 func (dex *Dex) PostChainTx(tx *rtypes.SendTxArgs) (common.Hash, error) {
-	nonce, err := WalletGetTransactionCount(tx.From)
-	if err != nil {
-		dex.Logger.Debug("WalletGetNonce err")
-		return common.EmptyHash, err
-	}
-
-	s := hexutil.Uint64(nonce)
-	tx.Nonce = &s
-
 	tx.GasPrice = (*hexutil.Big)(big.NewInt(1e11))
 
 	// EstimateGas return gas
@@ -400,17 +426,51 @@ func (dex *Dex) PostChainTx(tx *rtypes.SendTxArgs) (common.Hash, error) {
 	}
 	tx.Gas = &gas
 
+	if _, ok := dex.isFreshNonce[tx.From]; ok {
+		dex.setFresh(tx.From)
+		dex.startFreshTimer(tx.From)
+	}
+
+	var nonce uint64
+	if dex.isFreshNonce[tx.From] {
+		nonce, err = WalletGetTransactionCount(tx.From)
+		if err != nil {
+			dex.Logger.Debug("WalletGetNonce err")
+			return common.EmptyHash, err
+		}
+		dex.dexDB.UpdateAccountNonce(tx.From, nonce)
+	} else {
+		nonce, err = dex.dexDB.ReadAccountNonce(tx.From)
+		if err != nil {
+			dex.Logger.Debug("DexDBGetNonce err")
+			return common.EmptyHash, err
+		}
+	}
+
+	dex.resetFresh(tx.From)
+
+	s := hexutil.Uint64(nonce)
+	tx.Nonce = &s
+
 	result, err := WalletSignTx(tx)
 	if err != nil {
 		dex.Logger.Debug("WalletSignTx err")
 		return common.EmptyHash, err
 	}
+
 	var txType string
 	if tx.TokenAddress == common.EmptyAddress {
 		txType = "tx"
 	} else {
 		txType = "txt"
 	}
+
+	err = dex.dexDB.UpdateAccountNonce(tx.From, nonce+1)
+	if err != nil {
+		dex.Logger.Debug("UpdateAccountNonce err")
+		return common.EmptyHash, err
+	}
+
 	hash, err := SendRawTx(result.Raw, txType)
 	if err != nil {
 		dex.Logger.Debug("SendRawTransacion err")

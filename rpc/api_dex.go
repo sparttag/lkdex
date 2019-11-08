@@ -23,21 +23,21 @@ type PublicOrderPoolAPI struct {
 func NewPublicOrderPoolAPI(b Backend) *PublicOrderPoolAPI {
 	return &PublicOrderPoolAPI{b, b.GetDex(), b.GetDexDB()}
 }
-func (s *PublicOrderPoolAPI) GetOrderHash(order *types.Order) (common.Hash, error) {
+func (s *PublicOrderPoolAPI) calOrderHash(order *types.Order) (common.Hash, error) {
 	if order == nil {
 		return common.EmptyHash, fmt.Errorf("order is nil")
 	}
 	return order.OrderToHash(), nil
 }
 
-func (s *PublicOrderPoolAPI) GetSignOrderHash(order *types.SignOrder) (common.Hash, error) {
+func (s *PublicOrderPoolAPI) CalSignOrderHash(order *types.SignOrder) (common.Hash, error) {
 	if order == nil {
 		return common.EmptyHash, fmt.Errorf("order is nil")
 	}
 	return order.OrderToHash(), nil
 }
 
-func (s *PublicOrderPoolAPI) GetOrderByHash(hash common.Hash) (*types.SignOrder, error) {
+func (s *PublicOrderPoolAPI) GetSignOrderByHash(hash common.Hash) (*types.SignOrder, error) {
 
 	return s.dexDB.ReadOrder(hash)
 }
