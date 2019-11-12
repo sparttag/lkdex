@@ -82,6 +82,8 @@ func (o *OrderRet) ToOrder() (*types.Order, error) {
 		TokenGet:  o.TokenGet,
 		TokenGive: o.TokenGive,
 		Maker:     o.Maker,
+		Nonce:     hexutil.Uint64(o.Nonce),
+		Expires:   hexutil.Uint64(o.Expires),
 	}
 
 	amountGet, ok := new(big.Int).SetString(o.AmountGet, 0)
