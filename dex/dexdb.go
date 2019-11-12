@@ -37,19 +37,20 @@ const (
 )
 
 type OrderModel struct {
-	HashID     string          `gorm:"primary_key;type:char(66)"`
-	TokenGet   string          `gorm:"type:char(42);not null"`
-	AmountGet  string          `gorm:"not null"`
-	TokenGive  string          `gorm:"type:char(42);not null"`
-	AmountGive string          `gorm:"not null"`
-	Nonce      sql.NullInt64   `gorm:"not null"`
-	Expires    sql.NullInt64   `gorm:"not null"`
-	Maker      string          `gorm:"type:char(42);not null"`
-	R          string          `gorm:"type:char(34);not null"`
-	S          string          `gorm:"type:char(34);not null"`
-	V          string          `gorm:"type:char(4);not null"`
-	State      sql.NullInt64   `gorm:"not null"` //0:Sending(not save in block)  1:Trading  2:Finish(Cancel)
-	Price      sql.NullFloat64 `gorm:"type:numeric(225,20);not null"`
+	HashID       string          `gorm:"primary_key;type:char(66)"`
+	TokenGet     string          `gorm:"type:char(42);not null"`
+	AmountGet    string          `gorm:"not null"`
+	TokenGive    string          `gorm:"type:char(42);not null"`
+	AmountGive   string          `gorm:"not null"`
+	Nonce        sql.NullInt64   `gorm:"not null"`
+	Expires      sql.NullInt64   `gorm:"not null"`
+	Maker        string          `gorm:"type:char(42);not null"`
+	R            string          `gorm:"type:char(34);not null"`
+	S            string          `gorm:"type:char(34);not null"`
+	V            string          `gorm:"type:char(4);not null"`
+	State        sql.NullInt64   `gorm:"not null"` //0:Sending(not save in block)  1:Trading  2:Finish(Cancel)
+	Price        sql.NullFloat64 `gorm:"type:numeric(225,20);not null"`
+	FilledAmount string          `gorm:""`
 }
 
 type TradeModel struct {
@@ -156,6 +157,13 @@ func (db *SQLDBBackend) UpdateOrderState(hash common.Hash, state uint64) error {
 	return nil
 }
 
+func (db *SQLDBBackend) UpdateFillAmount(hash common.Hash, amount string) error {
+	var order OrderModel
+	if err := db.Model(&order).Where(&OrderModel{HashID: hash.Hex()}).Update("filledAmount", amount).Error; err != nil {
+		return err
+	}
+	return nil
+}
 func (db *SQLDBBackend) DeleteOrder(hash common.Hash) error {
 	if err := db.Delete(&OrderModel{HashID: hash.Hex()}).Error; err != nil {
 		return err

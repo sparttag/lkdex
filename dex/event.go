@@ -163,8 +163,9 @@ func (c *DexSubscription) FilterrLog(vlog *lktypes.Log) error {
 			//Save Trade
 			c.logger.Debug("event", "Trade", ret)
 			takerAddr := string(vlog.Topics[1].Bytes())
-			c.logger.Debug("Trade Amount", "taker", takerAddr, "amount", ret)
-			//c.db.CreateTrade(s.OrderToHash(), r.A2)
+			orderHash := common.BytesToHash(vlog.Topics[2].Bytes())
+			c.logger.Debug("Trade Amount", "taker", takerAddr, "amount", ret, "hash", orderHash)
+			c.db.UpdateFillAmount(orderHash, ret)
 
 		case common.BytesToHash([]byte("Cancel")):
 			//Save CancelOrder

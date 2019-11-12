@@ -41,7 +41,7 @@ function Start(){
   binfile=lkdex
   cmd=${binpath}/${binfile}
   peer_rpc="http://127.0.0.1:8000"
-  contract_addr=0x881658e078b70a4c4c594de654b40bbe6fd53b22
+  contract_addr=0x89e29f3423bd96053e31d9bec970accfa8a14493
 
   nohup $binfile node --log_level "debug" --home ${home} --contract_addr ${contract_addr}  --daemon.peer_rpc $peer_rpc --detach true  >>${logpath}/attach.log  2>&1 &
 }
