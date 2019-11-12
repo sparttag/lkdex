@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/lianxiangcloud/linkchain/libs/common"
@@ -93,9 +94,23 @@ func (s *PrivateWalletAPI) TakerOrderByHash(a common.Address, hash common.Hash, 
 		return nil, err
 	}
 	if order == nil {
-		return nil, err
+		return nil, fmt.Errorf("order is not exist")
 	}
 	return s.Trade(a, order, amount)
+}
+
+func (s *PrivateWalletAPI) CancelOrder(order *types.SignOrder) (common.Hash, error) {
+	return s.dex.DexCancelOrder(order)
+}
+func (s *PrivateWalletAPI) CancelOrderByHash(hash common.Hash) (common.Hash, error) {
+	order, err := s.dexDB.ReadOrder(hash)
+	if err != nil {
+		return common.EmptyHash, err
+	}
+	if order == nil {
+		return common.EmptyHash, fmt.Errorf("order is not exist")
+	}
+	return s.dex.DexCancelOrder(order)
 }
 
 func (s *PrivateWalletAPI) WithdrawToken(a common.Address, token common.Address, amount *hexutil.Big) (common.Hash, error) {
