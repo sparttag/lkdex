@@ -52,17 +52,6 @@ func (c *DexSubscription) SubLoop(chanLog chan lktypes.Log, cli *rpc.ClientSubsc
 		case vLog := <-chanLog:
 			c.logger.Debug("Subscription", "block", vLog.BlockNumber) // pointer to event log
 			c.FilterrLog(&vLog)
-			/*
-				case <-c.restart:
-					time.Sleep(time.Second * 10)
-					client, err := rpc.Dial(c.nodeUrl)
-					if err != nil {
-						c.logger.Error("failed to dial peer(%s): %v", "URL", c.nodeUrl, "err", err)
-						c.restart <- true
-					}
-					c.client = client
-					c.OnStart()
-			*/
 		}
 	}
 }
@@ -162,11 +151,21 @@ func (c *DexSubscription) FilterrLog(vlog *lktypes.Log) error {
 		case common.BytesToHash([]byte("Trade")):
 			//Save Trade
 			c.logger.Debug("event", "Trade", ret)
-			takerAddr := string(vlog.Topics[1].Bytes())
+			takerAddr := common.BytesToAddress(vlog.Topics[1].Bytes())
 			orderHash := common.BytesToHash(vlog.Topics[2].Bytes())
 			c.logger.Debug("Trade Amount", "taker", takerAddr, "amount", ret, "hash", orderHash)
-			c.db.UpdateFillAmount(orderHash, ret)
+			err := c.db.UpdateFillAmount(orderHash, ret)
+			if err != nil {
+				c.logger.Error("Trade Fill Amount err", "err", err)
+				return err
+			}
 
+			DealAmount, _ := new(big.Int).SetString(ret, 0)
+			err = c.db.CreateTrade(orderHash, DealAmount, vlog.BlockNumber, vlog.TxHash, takerAddr)
+			if err != nil {
+				c.logger.Error("Trade Create err", "err", err)
+				return err
+			}
 		case common.BytesToHash([]byte("Cancel")):
 			//Save CancelOrder
 			c.logger.Debug("event", "Cancel", ret)

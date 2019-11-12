@@ -18,8 +18,6 @@ const (
 	MaxPriceDecPrecision  = 8 //trade
 )
 
-type TxPair [2]common.Address
-
 // PublicTransactionPoolAPI exposes methods for the RPC interface
 type PublicOrderPoolAPI struct {
 	b     Backend
@@ -49,20 +47,8 @@ func (s *PublicOrderPoolAPI) GetOrderByHash(hash common.Hash) (*types.SignOrder,
 	return s.dexDB.ReadOrder(hash)
 }
 
-func (s *PublicOrderPoolAPI) GetTxPair() ([]TxPair, error) {
-	return nil, nil
-}
-
 func (s *PublicOrderPoolAPI) GetOrderByTxPair(getToken common.Address, giveToken common.Address, count uint64) ([]*types.SignOrder, error) {
 	return s.dexDB.QueryOrderByTxPair(getToken, giveToken, 0, count)
-}
-
-func (s *PublicOrderPoolAPI) GetPriceByTxPair(getToken common.Address, giveToken common.Address) (*big.Int, error) {
-	return nil, nil
-}
-
-func (s *PublicOrderPoolAPI) GetDealOrderByTaker(a common.Address, token common.Address) ([]types.Order, error) {
-	return nil, nil
 }
 
 func (s *PublicOrderPoolAPI) GetDepositAmount(a common.Address, token common.Address) (*hexutil.Big, error) {
@@ -71,4 +57,13 @@ func (s *PublicOrderPoolAPI) GetDepositAmount(a common.Address, token common.Add
 		return nil, err
 	}
 	return (*hexutil.Big)(ret), nil
+}
+
+func (s *PublicOrderPoolAPI) GetPriceByTxPair(getToken common.Address, giveToken common.Address) (*big.Int, error) {
+
+	return nil, nil
+}
+
+func (s *PublicOrderPoolAPI) GetDealOrderByTaker(a common.Address, token common.Address) ([]types.Order, error) {
+	return nil, nil
 }

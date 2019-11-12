@@ -58,7 +58,7 @@ type TradeModel struct {
 	HashID     string        `gorm:"type:char(66);FOREIGNKEY"` //Order Hash
 	DealAmount string        `gorm:"not null"`                 //Deal amount
 	BlockNum   sql.NullInt64 `gorm:"not null"`                 //Deal BlockNum
-	TxHash     sql.NullInt64 `gorm:"type:char(66);not null"`   //Deal Tx hash
+	TxHash     string        `gorm:"type:char(66);not null"`   //Deal Tx hash
 	Taker      string        `gorm:"type:char(42);not null"`
 }
 
@@ -172,28 +172,28 @@ func (db *SQLDBBackend) DeleteOrder(hash common.Hash) error {
 }
 
 //Trade: CURD
-func (db *SQLDBBackend) CreateTrade(orderHash common.Hash, DealAmount *big.Int, BlockNum uint64, txHash common.Hash) error {
-
-	return nil
-}
-func (db *SQLDBBackend) UpdateTrade() error {
-	return nil
-}
-func (db *SQLDBBackend) ReadTradeByTxHash() error {
-
-	return nil
-}
-func (db *SQLDBBackend) ReadTradeByOrder() error {
-
-	return nil
-}
-
-func (db *SQLDBBackend) ReadTradeByToken() error {
-
-	return nil
-}
-
-func (db *SQLDBBackend) DeleteTrade() error {
+func (db *SQLDBBackend) CreateTrade(orderHash common.Hash, DealAmount *big.Int, BlockNum uint64, txHash common.Hash, taker common.Address) error {
+	last := TradeModel{}
+	found := db.Where(&TradeModel{HashID: orderHash.Hex()}).Last(last).RecordNotFound()
+	if found {
+		if last.BlockNum.Int64 > int64(BlockNum) {
+			return nil
+		}
+		if last.BlockNum.Int64 == int64(BlockNum) {
+			amount, _ := new(big.Int).SetString(last.DealAmount, 0)
+			if DealAmount.Cmp(amount) <= 0 {
+				return nil
+			}
+		}
+	}
+	trade := TradeModel{
+		HashID:     orderHash.Hex(),
+		DealAmount: DealAmount.String(),
+		BlockNum:   sql.NullInt64{(int64)(BlockNum), true},
+		TxHash:     txHash.Hex(),
+		Taker:      taker.Hex(),
+	}
+	db.Save(&trade)
 	return nil
 }
 
@@ -222,30 +222,6 @@ func (db *SQLDBBackend) QueryOrderByTxPair(tokenGet common.Address, tokenGive co
 	}
 	return rets, nil
 }
-
-//QueryOrderByTxPair: state
-/*
-func (db *SQLDBBackend) QueryOrderByState(tokenGive common.Address, tokenGet common.Address, index uint64, count uint64) ([]*types.SignOrder, error) {
-
-	var orders []OrderModel
-	var rets []*types.SignOrder
-
-	if err := db.Model(&OrderModel{}).Limit(count).Offset(index).Where(&OrderModel{
-		TokenGive: tokenGive.Hex(),
-		TokenGet:  tokenGet.Hex(),
-	}).Find(&orders).Error; err != nil {
-		return nil, err
-	}
-	for _, a := range orders {
-		ret, err := a.ToSignOrder()
-		if err != nil {
-			return nil, err
-		}
-		rets = append(rets, ret)
-	}
-	return rets, nil
-}
-*/
 
 //Account: CURD
 func (db *SQLDBBackend) CreateAccountBalance(account common.Address) error {
@@ -281,6 +257,7 @@ func (db *SQLDBBackend) UpdateAccountBalance(account common.Address, token commo
 	}
 	return nil
 }
+
 func (db *SQLDBBackend) DeleteAccountBalance(account common.Address) error {
 	acc := &AccountModel{UserID: account.Hex()}
 	return db.Delete(acc).Error
@@ -304,6 +281,7 @@ func (db *SQLDBBackend) ReadSync() (uint64, uint64, error) {
 	err := db.First(&b).Error
 	return (uint64)(b.BeginBlock.Int64), (uint64)(b.EndBlock.Int64), err
 }
+
 func (db *SQLDBBackend) UpdateSync(begin, end uint64) error {
 	b := &BlockSyncModel{}
 	err := db.First(&b).Error
