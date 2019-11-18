@@ -158,7 +158,7 @@ func (db *SQLDBBackend) UpdateOrderState(hash common.Hash, state uint64) error {
 
 func (db *SQLDBBackend) UpdateFillAmount(hash common.Hash, amount string) error {
 	var order OrderModel
-	if err := db.Model(&order).Where(&OrderModel{HashID: hash.Hex()}).Update("filledAmount", amount).Error; err != nil {
+	if err := db.Model(&order).Where(&OrderModel{HashID: hash.Hex()}).Update("filled_amount", amount).Error; err != nil {
 		return err
 	}
 	return nil
