@@ -173,14 +173,16 @@ func (db *SQLDBBackend) DeleteOrder(hash common.Hash) error {
 //Trade: CURD
 func (db *SQLDBBackend) CreateTrade(orderHash common.Hash, DealAmount *big.Int, BlockNum uint64, txHash common.Hash, taker common.Address) error {
 	last := TradeModel{}
-	found := db.Where(&TradeModel{HashID: orderHash.Hex()}).Last(last).RecordNotFound()
+	found := db.Where(&TradeModel{HashID: orderHash.Hex()}).Last(&last).RecordNotFound()
 	if found {
 		if last.BlockNum.Int64 > int64(BlockNum) {
+			db.logger.Debug("Old Trade", "blockNum", BlockNum)
 			return nil
 		}
 		if last.BlockNum.Int64 == int64(BlockNum) {
 			amount, _ := new(big.Int).SetString(last.DealAmount, 0)
 			if DealAmount.Cmp(amount) <= 0 {
+				db.logger.Debug("Old Trade", "amount", amount.String())
 				return nil
 			}
 		}
