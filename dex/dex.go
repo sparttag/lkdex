@@ -116,6 +116,7 @@ func NewDex(config *config.Config, logger log.Logger, db *SQLDBBackend) (*Dex, e
 		return nil, err
 	}
 	defaultInitBlockHeight = uint64(*height)
+	dexSub.begin = defaultInitBlockHeight
 
 	dex.Logger.Info("NewDex", "defaultInitBlockHeight", defaultInitBlockHeight)
 	if err != nil {
