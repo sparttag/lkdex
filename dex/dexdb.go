@@ -104,9 +104,8 @@ func (o *OrderModel) ToSignOrder() (*types.SignOrder, error) {
 func (db *SQLDBBackend) CreateOrder(order *types.SignOrder, state uint64) error {
 	hash := order.OrderToHash()
 	db.logger.Debug("Create Hash", "hash", hash.Hex())
-
-	if db.NewRecord(&OrderModel{HashID: hash.Hex()}) {
-		db.logger.Debug("Record is create", "hash", hash.Hex())
+	if db.Find(&OrderModel{HashID: hash.Hex()}).RecordNotFound() {
+		db.logger.Debug("Hash Created", "hash", hash.Hex())
 		return nil
 	}
 	price := new(big.Float).Quo(
@@ -225,9 +224,6 @@ func (db *SQLDBBackend) QueryOrderByTxPair(tokenGet common.Address, tokenGive co
 
 //Account: CURD
 func (db *SQLDBBackend) CreateAccountBalance(account common.Address) error {
-	if !db.NewRecord(&AccountModel{UserID: account.Hex()}) {
-		return nil
-	}
 	return db.Create(&AccountModel{UserID: account.Hex()}).Error
 }
 func (db *SQLDBBackend) ReadAccountBalance(account common.Address) (*AccountModel, error) {
