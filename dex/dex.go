@@ -68,7 +68,12 @@ func CheckOrder(order *types.Order) error {
 	if order == nil {
 		return errors.New("order is nil")
 	}
-
+	if order.AmountGet == nil {
+		return errors.New("order format error: amountGet is nil")
+	}
+	if order.AmountGive == nil {
+		return errors.New("order format error: amountGive is nil")
+	}
 	if (*big.Int)(order.AmountGet).Cmp(zero) <= 0 {
 		return errors.New("order format error: amountGet less or equal 0")
 	}
