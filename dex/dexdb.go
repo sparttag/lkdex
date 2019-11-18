@@ -104,7 +104,7 @@ func (o *OrderModel) ToSignOrder() (*types.SignOrder, error) {
 func (db *SQLDBBackend) CreateOrder(order *types.SignOrder, state uint64) error {
 	hash := order.OrderToHash()
 	db.logger.Debug("Create Hash", "hash", hash.Hex())
-	if db.Find(&OrderModel{HashID: hash.Hex()}).RecordNotFound() {
+	if !db.Find(&OrderModel{HashID: hash.Hex()}).RecordNotFound() {
 		db.logger.Debug("Hash Created", "hash", hash.Hex())
 		return nil
 	}
