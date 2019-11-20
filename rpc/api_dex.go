@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/lianxiangcloud/linkchain/libs/common"
 	"github.com/lianxiangcloud/linkchain/libs/hexutil"
@@ -57,13 +56,4 @@ func (s *PublicOrderPoolAPI) GetDepositAmount(a common.Address, token common.Add
 		return nil, err
 	}
 	return (*hexutil.Big)(ret), nil
-}
-
-func (s *PublicOrderPoolAPI) GetPriceByTxPair(getToken common.Address, giveToken common.Address) (*big.Int, error) {
-
-	return nil, nil
-}
-
-func (s *PublicOrderPoolAPI) GetDealOrderByTaker(a common.Address, token common.Address) ([]types.Order, error) {
-	return nil, nil
 }

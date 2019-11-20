@@ -151,9 +151,11 @@ func (c *DexSubscription) FilterrLog(vlog *lktypes.Log) error {
 		case common.BytesToHash([]byte("Trade")):
 			//Save Trade
 			c.logger.Debug("event", "Trade", ret)
-			takerAddr := common.BytesToAddress(vlog.Topics[1].Bytes())
-			orderHash := common.BytesToHash(vlog.Topics[2].Bytes())
-			c.logger.Debug("Trade Amount", "taker", takerAddr, "amount", ret, "hash", orderHash)
+			takerAddr := common.HexToAddress(string(vlog.Topics[1].Bytes()[:]))
+			orderHash := common.HexToHash(string(vlog.Topics[2].Bytes()[:]))
+
+			c.logger.Debug("Trade Amount", "taker", takerAddr.String(), "amount", ret, "hash", orderHash.Hex())
+
 			err := c.db.UpdateFillAmount(orderHash, ret)
 			if err != nil {
 				c.logger.Error("Trade Fill Amount err", "err", err)
