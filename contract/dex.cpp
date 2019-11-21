@@ -18,17 +18,16 @@ TC_STRUCT(Order,
 		TC_FIELD_NAME(maker, "maker"))
 
 struct TradeRet{
-	tc::BInt amount;
+	tc::BInt filledAmount;
+	tc::BInt dealAmount;
 	tc::Address taker;
 	tc::Hash hash;
 };
 TC_STRUCT(TradeRet,
-		TC_FIELD_NAME(amount, "amount"),
+		TC_FIELD_NAME(filledAmount, "filled"),
+		TC_FIELD_NAME(dealAmount, "deal"),
 		TC_FIELD_NAME(taker, "taker"),
 		TC_FIELD_NAME(hash, "hash"))
-
-
-
 
 struct SignOrder {
 	Order order;
@@ -183,7 +182,7 @@ void Dex::trade(const SignOrder& signOrder, const tc::BInt& amount){
 
 	state.filledAmount = deal + state.filledAmount;
 	orderState.set(state, hash);
-	TradeRet ret{state.filledAmount,taker,hash};
+	TradeRet ret{state.filledAmount,deal,taker,hash};
 	TC_Log1(tc::json::Marshal(ret), "Trade");
 }
 

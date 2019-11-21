@@ -55,11 +55,12 @@ type OrderModel struct {
 
 type TradeModel struct {
 	gorm.Model
-	HashID     string        `gorm:"type:char(66);FOREIGNKEY"` //Order Hash
-	DealAmount string        `gorm:"not null"`                 //Deal amount
-	BlockNum   sql.NullInt64 `gorm:"not null"`                 //Deal BlockNum
-	TxHash     string        `gorm:"type:char(66);not null"`   //Deal Tx hash
-	Taker      string        `gorm:"type:char(42);not null"`
+	HashID       string        `gorm:"type:char(66);FOREIGNKEY"` //Order Hash
+	DealAmount   string        `gorm:"not null"`                 //Deal amount
+	FilledAmount string        `gorm:"not null"`
+	BlockNum     sql.NullInt64 `gorm:"not null"`               //Deal BlockNum
+	TxHash       string        `gorm:"type:char(66);not null"` //Deal Tx hash
+	Taker        string        `gorm:"type:char(42);not null"`
 }
 
 func (o *OrderModel) ToSignOrder() (*types.SignOrder, error) {
@@ -172,7 +173,7 @@ func (db *SQLDBBackend) DeleteOrder(hash common.Hash) error {
 }
 
 //Trade: CURD
-func (db *SQLDBBackend) CreateTrade(orderHash common.Hash, DealAmount *big.Int, BlockNum uint64, txHash common.Hash, taker common.Address) error {
+func (db *SQLDBBackend) CreateTrade(orderHash common.Hash, FilledAmount *big.Int, DealAmount *big.Int, BlockNum uint64, txHash common.Hash, taker common.Address) error {
 	last := TradeModel{}
 	found := db.Where(&TradeModel{HashID: orderHash.Hex()}).Last(&last).RecordNotFound()
 	if found {
@@ -181,19 +182,20 @@ func (db *SQLDBBackend) CreateTrade(orderHash common.Hash, DealAmount *big.Int, 
 			return nil
 		}
 		if last.BlockNum.Int64 == int64(BlockNum) {
-			amount, _ := new(big.Int).SetString(last.DealAmount, 0)
-			if DealAmount.Cmp(amount) <= 0 {
+			amount, _ := new(big.Int).SetString(last.FilledAmount, 0)
+			if FilledAmount.Cmp(amount) <= 0 {
 				db.logger.Debug("Old Trade", "amount", amount.String())
 				return nil
 			}
 		}
 	}
 	trade := TradeModel{
-		HashID:     orderHash.Hex(),
-		DealAmount: DealAmount.String(),
-		BlockNum:   sql.NullInt64{(int64)(BlockNum), true},
-		TxHash:     txHash.Hex(),
-		Taker:      taker.Hex(),
+		HashID:       orderHash.Hex(),
+		DealAmount:   DealAmount.String(),
+		BlockNum:     sql.NullInt64{(int64)(BlockNum), true},
+		TxHash:       txHash.Hex(),
+		Taker:        taker.Hex(),
+		FilledAmount: FilledAmount.String(),
 	}
 	db.Save(&trade)
 	return nil

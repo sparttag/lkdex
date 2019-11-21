@@ -89,9 +89,10 @@ func (o *OrderRet) ToOrder() (*types.Order, error) {
 }
 
 type TradeRet struct {
-	Amount string         `json:"amount"`
-	Taker  common.Address `json:"taker"`
-	Hash   common.Hash    `json:"hash"`
+	FilledAmount string         `json:"filled"`
+	DealAmount   string         `json:"deal"`
+	Taker        common.Address `json:"taker"`
+	Hash         common.Hash    `json:"hash"`
 }
 
 type SignOrderRet struct {
@@ -167,31 +168,33 @@ func (c *DexSubscription) FilterrLog(vlog *lktypes.Log) error {
 			takerAddr := r.Taker
 			orderHash := r.Hash
 
-			c.logger.Debug("Trade Amount", "taker", takerAddr.String(), "amount", r.Amount, "hash", orderHash.Hex())
-
-			err = c.db.UpdateFillAmount(orderHash, r.Amount)
+			c.logger.Debug("Trade Amount", "taker", takerAddr.String(), "dealAmount", r.DealAmount, "fillAmount", r.FilledAmount, "hash", orderHash.Hex())
+			err = c.db.UpdateFillAmount(orderHash, r.FilledAmount)
 			if err != nil {
 				c.logger.Error("Trade Fill Amount err", "err", err)
 				return err
 			}
 
-			DealAmount, _ := new(big.Int).SetString(ret, 0)
-			err = c.db.CreateTrade(orderHash, DealAmount, vlog.BlockNumber, vlog.TxHash, takerAddr)
+			FilledAmount, ok := new(big.Int).SetString(r.FilledAmount, 0)
+			if !ok {
+				c.logger.Error("Trade Fill Amount err", "err", err)
+				return err
+			}
+			DealAmount, ok := new(big.Int).SetString(r.DealAmount, 0)
+			if !ok {
+				c.logger.Error("Trade Deal Amount err", "err", err)
+				return err
+			}
+			err = c.db.CreateTrade(orderHash, FilledAmount, DealAmount, vlog.BlockNumber, vlog.TxHash, takerAddr)
 			if err != nil {
 				c.logger.Error("Trade Create err", "err", err)
 				return err
 			}
+
 		case common.BytesToHash([]byte("Cancel")):
 			//Save CancelOrder
 			c.logger.Debug("event", "Cancel", ret)
-			var s types.SignOrder
-			c.logger.Debug("event", "Order", ret)
-			err := json.Unmarshal([]byte(ret), &s)
-			if err != nil {
-				c.logger.Error("Event Order unmarshal err", "ret", ret)
-				return err
-			}
-			err = c.db.UpdateOrderState(s.OrderToHash(), Finish)
+			err := c.db.UpdateOrderState(common.HexToHash(ret), Finish)
 			if err != nil {
 				c.logger.Error("Order update err", "err", err)
 				return err
