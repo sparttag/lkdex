@@ -184,7 +184,7 @@ void Dex::trade(const SignOrder& signOrder, const tc::BInt& amount){
 	state.filledAmount = deal + state.filledAmount;
 	orderState.set(state, hash);
 	TradeRet ret{state.filledAmount,taker,hash};
-	TC_Log1(tc::json::Marshal(ret), "Order");
+	TC_Log1(tc::json::Marshal(ret), "Trade");
 }
 
 void Dex::cancelOrder(const SignOrder& signOrder){
