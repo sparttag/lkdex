@@ -118,19 +118,20 @@ func (db *SQLDBBackend) CreateOrder(order *types.SignOrder, state uint64) error 
 	}
 
 	saveOrder := &OrderModel{
-		HashID:     hash.Hex(),
-		TokenGet:   order.TokenGet.Hex(),
-		AmountGet:  order.AmountGet.String(),
-		TokenGive:  order.TokenGive.Hex(),
-		AmountGive: order.AmountGive.String(),
-		Nonce:      sql.NullInt64{(int64)(order.Nonce), true},
-		Expires:    sql.NullInt64{(int64)(order.Expires), true},
-		Maker:      order.Maker.Hex(),
-		R:          order.R.String(),
-		S:          order.S.String(),
-		V:          order.V.String(),
-		State:      sql.NullInt64{(int64)(state), true},
-		Price:      sql.NullFloat64{pricef, true},
+		HashID:       hash.Hex(),
+		TokenGet:     order.TokenGet.Hex(),
+		AmountGet:    order.AmountGet.String(),
+		TokenGive:    order.TokenGive.Hex(),
+		AmountGive:   order.AmountGive.String(),
+		Nonce:        sql.NullInt64{(int64)(order.Nonce), true},
+		Expires:      sql.NullInt64{(int64)(order.Expires), true},
+		Maker:        order.Maker.Hex(),
+		R:            order.R.String(),
+		S:            order.S.String(),
+		V:            order.V.String(),
+		State:        sql.NullInt64{(int64)(state), true},
+		Price:        sql.NullFloat64{pricef, true},
+		FilledAmount: "0",
 	}
 	if err := db.Create(saveOrder).Error; err != nil {
 		return err
