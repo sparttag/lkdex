@@ -109,8 +109,8 @@ func (db *SQLDBBackend) CreateOrder(order *types.SignOrder, state uint64) error 
 		return nil
 	}
 	price := new(big.Float).Quo(
-		new(big.Float).SetInt((*big.Int)(order.AmountGet)),
-		new(big.Float).SetInt((*big.Int)(order.AmountGive)))
+		new(big.Float).SetInt((*big.Int)(order.AmountGive)),
+		new(big.Float).SetInt((*big.Int)(order.AmountGet)))
 
 	pricef, acy := price.Float64()
 	if acy != 0 {
