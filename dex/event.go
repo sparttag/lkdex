@@ -88,6 +88,12 @@ func (o *OrderRet) ToOrder() (*types.Order, error) {
 	return &order, nil
 }
 
+type TradeRet struct {
+	Amount string         `json:"amount"`
+	Taker  common.Address `json:"taker"`
+	Hash   common.Hash    `json:"hash"`
+}
+
 type SignOrderRet struct {
 	OrderRet `json:"order"`
 	R        string `json:"R"`
@@ -151,12 +157,19 @@ func (c *DexSubscription) FilterrLog(vlog *lktypes.Log) error {
 		case common.BytesToHash([]byte("Trade")):
 			//Save Trade
 			c.logger.Debug("event", "Trade", ret)
-			takerAddr := common.HexToAddress(string(vlog.Topics[1].Bytes()[:]))
-			orderHash := common.HexToHash(string(vlog.Topics[2].Bytes()[:]))
+			var r TradeRet
+			err := json.Unmarshal([]byte(ret), &r)
+			if err != nil {
+				c.logger.Error("Event Order unmarshal err", "ret", ret, "err", err)
+				return err
+			}
 
-			c.logger.Debug("Trade Amount", "taker", takerAddr.String(), "amount", ret, "hash", orderHash.Hex())
+			takerAddr := r.Taker
+			orderHash := r.Hash
 
-			err := c.db.UpdateFillAmount(orderHash, ret)
+			c.logger.Debug("Trade Amount", "taker", takerAddr.String(), "amount", r.Amount, "hash", orderHash.Hex())
+
+			err = c.db.UpdateFillAmount(orderHash, r.Amount)
 			if err != nil {
 				c.logger.Error("Trade Fill Amount err", "err", err)
 				return err

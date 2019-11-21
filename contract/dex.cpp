@@ -17,6 +17,19 @@ TC_STRUCT(Order,
 		TC_FIELD_NAME(nonce, "nonce"),
 		TC_FIELD_NAME(maker, "maker"))
 
+struct TradeRet{
+	tc::BInt amount;
+	tc::Address taker;
+	tc::Hash hash;
+};
+TC_STRUCT(TradeRet,
+		TC_FIELD_NAME(amount, "amount"),
+		TC_FIELD_NAME(taker, "taker"),
+		TC_FIELD_NAME(hash, "hash"))
+
+
+
+
 struct SignOrder {
 	Order order;
 	tc::BInt v;
@@ -131,7 +144,7 @@ void Dex::postOrder(const SignOrder& signOrder){
 	TC_RequireWithMsg(addr == order.maker, "Order sign error");
 	TC_RequireWithMsg(!state.isCancel, "Order is canceled");
 
-	TC_Log2(tc::json::Marshal(signOrder), "Order", hash.toString());
+	TC_Log1(tc::json::Marshal(signOrder), "Order");
 }
 
 /*
@@ -170,7 +183,8 @@ void Dex::trade(const SignOrder& signOrder, const tc::BInt& amount){
 
 	state.filledAmount = deal + state.filledAmount;
 	orderState.set(state, hash);
-	TC_Log3(state.filledAmount.toString(), "Trade", taker.toString(), hash.toString());
+	TradeRet ret{state.filledAmount,taker,hash};
+	TC_Log1(tc::json::Marshal(ret), "Order");
 }
 
 void Dex::cancelOrder(const SignOrder& signOrder){
@@ -195,17 +209,17 @@ void Dex::withdraw(const tc::Address& token, const tc::BInt& amount){
 	TC_RequireWithMsg(balance >= amount && amount > 0, "Insufficient balance");
 	depositAmount.set(balance - amount, tc::App::getInstance()->sender(), token);
 	TC_TransferToken(tc::App::getInstance()->sender().toString(), token.toString(), amount.toString());
-	TC_Log3(amount.toString(), "Withdraw", tc::App::getInstance()->sender().toString(), token.toString());
+	TC_Log1(amount.toString(), "Withdraw");
 }
 
 void Dex::deposit(){
 	tc::BInt balance = depositAmount.get(tc::App::getInstance()->sender(), tc::App::getInstance()->tokenAddress());
 	if (tc::App::getInstance()->tokenAddress() == tc::Address{}){
 		depositAmount.set(balance + tc::App::getInstance()->value(), tc::App::getInstance()->sender(), tc::App::getInstance()->tokenAddress());
-		TC_Log3(tc::App::getInstance()->value().toString(), "Deposit", tc::App::getInstance()->sender().toString(), tc::App::getInstance()->tokenAddress().toString());
+		TC_Log1(tc::App::getInstance()->value().toString(), "Deposit");
 	} else{
 		depositAmount.set(balance + tc::App::getInstance()->tokenValue(), tc::App::getInstance()->sender(), tc::App::getInstance()->tokenAddress());
-		TC_Log3(tc::App::getInstance()->tokenValue().toString(), "Deposit", tc::App::getInstance()->sender().toString(), tc::App::getInstance()->tokenAddress().toString());
+		TC_Log1(tc::App::getInstance()->tokenValue().toString(), "Deposit");
 	}
 }
 
