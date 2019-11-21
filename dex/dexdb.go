@@ -17,13 +17,13 @@ type SQLDBBackend struct {
 	logger log.Logger
 }
 
-//sync contract event
 type BlockSyncModel struct {
 	gorm.Model
 	BeginBlock sql.NullInt64 `gorm:"not null"`
 	EndBlock   sql.NullInt64 `gorm:"not null"`
 }
 
+//Account Balance DateBase: not used
 type AccountModel struct {
 	UserID string `gorm:"primary_key;type:char(42)"`
 	Token  string `gorm:"type:char(42)"`
@@ -36,6 +36,7 @@ const (
 	Finish
 )
 
+//OrderModel Order DateBase
 type OrderModel struct {
 	HashID       string          `gorm:"primary_key;type:char(66)"`
 	TokenGet     string          `gorm:"type:char(42);not null"`
@@ -53,6 +54,7 @@ type OrderModel struct {
 	FilledAmount string          `gorm:""`
 }
 
+//TradeModel Trade history DateBase
 type TradeModel struct {
 	gorm.Model
 	HashID       string        `gorm:"type:char(66);FOREIGNKEY"` //Order Hash
