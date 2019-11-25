@@ -51,7 +51,7 @@ type OrderModel struct {
 	V            string          `gorm:"type:char(4);not null"`
 	State        sql.NullInt64   `gorm:"not null"` //0:Sending(not save in block)  1:Trading  2:Finish(Cancel)
 	Price        sql.NullFloat64 `gorm:"type:numeric(225,20);not null"`
-	FilledAmount string          `gorm:""`
+	FilledAmount string          `gorm:"not null"`
 }
 
 //TradeModel Trade history DateBase
