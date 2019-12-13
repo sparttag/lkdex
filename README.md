@@ -1,15 +1,17 @@
-# Decentralized exchange running on linkchain.
+# lkdex
+Decentralized exchange running on linkchain.
+- contract/dex.cpp 交易所合约源码
+- doc/Dexcentralized exchange.pdf 交易所设计方案
+
 ## 编译说明
 `go` version >=1.12
-
-linkchain节点与钱包配置，见[linkchain](https://github.com/lianxiangcloud/linkchain)项目
-
-## 编译&安装
 ```
 cd lkdex
 make
 ```
 编译完成后，生成文件存于`bin/lkdex`目录
+
+linkchain节点与钱包配置，见[linkchain](https://github.com/lianxiangcloud/linkchain)项目
 
 ## 启动脚本程序
 启动/停止客户端脚本`sbin/dex.sh`
@@ -24,9 +26,6 @@ make
 例子
 ./bin/lkdex node --home ./lkdata --contract_addr 0x28bc0a05d787ff27213322087a8911e1b2c5eacf --daemon.peer_rpc http://10.9.194.103:46000 --daemon.peer_ws ws://10.9.194.103:44000 --wallet_daemon.peer_rpc http://10.9.194.103:18082 
 ```
-## 说明
-- contract/dex.cpp 交易所合约源码
-- doc/Dexcentralized exchange.pdf 交易所设计方案
 
 ## 客户端数据库
 客户端将订单与交易数据存储在`dex<合约地址>.db`文件下。数据格式为`sqlite3`
@@ -287,4 +286,3 @@ curl -s -X POST http://127.0.0.1:18804 -d '{"jsonrpc":"2.0","method":"wlt_deposi
 - 合约增加成交手续费,作为客户端的运营成本收入
 - 支持非本地linkchain节点的数据查询,支持节点钱包离线查询
 - 移动端客户端开发
-
