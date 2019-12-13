@@ -112,7 +112,7 @@ func NewDex(config *config.Config, logger log.Logger, db *SQLDBBackend) (*Dex, e
 	}
 	dex.Logger.Info("Dex client create")
 	db.AutoMigrate(&OrderModel{}, &TradeModel{}, &AccountModel{}, &BlockSyncModel{})
-	db.CreateSync()
+	//db.CreateSync()
 	db.SetLogger(logger)
 
 	height, err := GenesisBlockNumber()

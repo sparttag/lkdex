@@ -225,13 +225,16 @@ func (c *DexSubscription) OnStart() error {
 	//TODO: init result is too big
 	var result = make([]*lktypes.Log, 0)
 	if err := c.client.Call(&result, "lk_getLogs", query); err != nil {
-		log.Error("getLogs", "err", err.Error())
+		c.logger.Error("getLogs", "err", err.Error())
 	} else {
-		log.Debug("getLogs", "lenNum", len(result))
+		c.logger.Debug("getLogs", "lenNum", len(result))
 	}
 
 	for _, log := range result {
-		c.FilterrLog(log)
+		err = c.FilterrLog(log)
+		if err!= nil{
+			c.logger.Error("FilterrLog","err",err.Error())
+		}
 	}
 
 	chanLog := make(chan lktypes.Log)

@@ -9,14 +9,6 @@ import (
 	"github.com/lianxiangcloud/lkdex/types"
 )
 
-//MaxAmountDecPrecision = 8
-//MaxPriceDecPrecision  = 8
-const (
-	MaxOrderCount         = 20
-	MaxAmountDecPrecision = 8 //trade amount
-	MaxPriceDecPrecision  = 8 //trade
-)
-
 // PublicTransactionPoolAPI exposes methods for the RPC interface
 type PublicOrderPoolAPI struct {
 	b     Backend

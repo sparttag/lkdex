@@ -38,20 +38,20 @@ const (
 
 //OrderModel Order DateBase
 type OrderModel struct {
-	HashID       string          `gorm:"primary_key;type:char(66)"`
-	TokenGet     string          `gorm:"type:char(42);not null"`
-	AmountGet    string          `gorm:"not null"`
-	TokenGive    string          `gorm:"type:char(42);not null"`
-	AmountGive   string          `gorm:"not null"`
-	Nonce        sql.NullInt64   `gorm:"not null"`
-	Expires      sql.NullInt64   `gorm:"not null"`
-	Maker        string          `gorm:"type:char(42);not null"`
-	R            string          `gorm:"type:char(34);not null"`
-	S            string          `gorm:"type:char(34);not null"`
-	V            string          `gorm:"type:char(4);not null"`
-	State        sql.NullInt64   `gorm:"not null"` //0:Sending(not save in block)  1:Trading  2:Finish(Cancel)
-	Price        sql.NullFloat64 `gorm:"type:numeric(225,20);not null"`
-	FilledAmount string          `gorm:"not null"`
+	HashID       string          `gorm:"primary_key;type:char(66)"`     //Order HashID
+	TokenGet     string          `gorm:"type:char(42);not null"`        //Get Token Address
+	AmountGet    string          `gorm:"not null"`                      //Get Token Amount
+	TokenGive    string          `gorm:"type:char(42);not null"`        //Give Token Address
+	AmountGive   string          `gorm:"not null"`                      //Give Token Amount
+	Nonce        sql.NullInt64   `gorm:"not null"`                      //Nonce
+	Expires      sql.NullInt64   `gorm:"not null"`                      //Expire time (Unix Timestamp)
+	Maker        string          `gorm:"type:char(42);not null"`        //Maker Address
+	R            string          `gorm:"type:char(34);not null"`        //Sign R
+	S            string          `gorm:"type:char(34);not null"`        //Sign S
+	V            string          `gorm:"type:char(4);not null"`         //Sign V
+	State        sql.NullInt64   `gorm:"not null"`                      //0:Sending(not save in block)  1:Trading  2:Finish(Cancel)
+	Price        sql.NullFloat64 `gorm:"type:numeric(225,20);not null"` //Order Price Calculated from AmountGive and AmountGet
+	FilledAmount string          `gorm:"not null"`                      //Order FilledAmount default:0
 }
 
 //TradeModel Trade history DateBase
@@ -59,10 +59,10 @@ type TradeModel struct {
 	gorm.Model
 	HashID       string        `gorm:"type:char(66);FOREIGNKEY"` //Order Hash
 	DealAmount   string        `gorm:"not null"`                 //Deal amount
-	FilledAmount string        `gorm:"not null"`
-	BlockNum     sql.NullInt64 `gorm:"not null"`               //Deal BlockNum
-	TxHash       string        `gorm:"type:char(66);not null"` //Deal Tx hash
-	Taker        string        `gorm:"type:char(42);not null"`
+	FilledAmount string        `gorm:"not null"`                 //Trade Amount
+	BlockNum     sql.NullInt64 `gorm:"not null"`                 //Deal BlockNum
+	TxHash       string        `gorm:"type:char(66);not null"`   //Deal Tx hash
+	Taker        string        `gorm:"type:char(42);not null"`   //Taker Address
 }
 
 func (o *OrderModel) ToSignOrder() (*types.SignOrder, error) {

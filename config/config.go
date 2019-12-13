@@ -115,7 +115,6 @@ type DaemonConfig struct {
 	Login     string `mapstructure:"login"`
 	Trusted   bool   `mapstructure:"trusted"`
 	Testnet   bool   `mapstructure:"testnet"`
-	SyncQuick bool   `mapstructure:"sync_quick"`
 }
 
 // RPCConfig rpc config
@@ -139,7 +138,6 @@ func DefaultDaemonConfig() *DaemonConfig {
 		Login:     "",
 		Trusted:   true,
 		Testnet:   true,
-		SyncQuick: false,
 	}
 }
 
@@ -150,7 +148,6 @@ func DefaultWalletDaemonConfig() *DaemonConfig {
 		Login:     "",
 		Trusted:   true,
 		Testnet:   true,
-		SyncQuick: false,
 	}
 }
 

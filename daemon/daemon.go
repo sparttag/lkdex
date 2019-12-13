@@ -15,20 +15,8 @@ import (
 	"github.com/lianxiangcloud/lkdex/config"
 )
 
-// type HttpMethod string
-
-// const (
-// 	GET  HttpMethod = "GET"
-// 	POST HttpMethod = "POST"
-// )
-
 type DaemonClient struct {
 	Addr string
-	// Login string
-
-	// Trusted bool
-	// Testnet bool
-
 	HttpClient *http.Client
 }
 
@@ -46,9 +34,6 @@ const (
 func InitWalletDaemonClient(daemonConfig *config.DaemonConfig) {
 	gWalletDaemonClient = &DaemonClient{
 		Addr: daemonConfig.PeerRPC,
-		// Login:   daemonConfig.Login,
-		// Trusted: daemonConfig.Trusted,
-		// Testnet: daemonConfig.Testnet,
 	}
 
 	transport := &http.Transport{
@@ -73,9 +58,6 @@ func InitWalletDaemonClient(daemonConfig *config.DaemonConfig) {
 func InitDaemonClient(daemonConfig *config.DaemonConfig) {
 	gDaemonClient = &DaemonClient{
 		Addr: daemonConfig.PeerRPC,
-		// Login:   daemonConfig.Login,
-		// Trusted: daemonConfig.Trusted,
-		// Testnet: daemonConfig.Testnet,
 	}
 
 	transport := &http.Transport{

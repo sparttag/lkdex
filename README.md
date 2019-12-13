@@ -1,60 +1,84 @@
-# 使用说明
+# Decentralized exchange running on linkchain.
+## 编译说明
 `go` version >=1.12
 
-## 编译&安装
-`make` 
-编译完成后，二进制文件`bin`目录
+linkchain节点与钱包配置，见[linkchain](https://github.com/lianxiangcloud/linkchain)项目
 
-## 启动程序
+## 编译&安装
+```
+cd lkdex
+make
+```
+编译完成后，生成文件存于`bin/lkdex`目录
+
+## 启动脚本程序
+启动/停止客户端脚本`sbin/dex.sh`
+
 `cd sbin`
 `./dex.sh start`
 
-## 客户端启动参数
+## 客户端命令行启动
+客户端RPC服务默认端口为18804,具体配置见config/config.go
 ```
 ./bin/lkdex node --home <数据地址> --contract_addr <合约地址> --daemon.peer_rpc <链节点地址> --daemon.peer_ws <链节点ws地址> --wallet_daemon.peer_rpc <钱包地址>
 例子
 ./bin/lkdex node --home ./lkdata --contract_addr 0x28bc0a05d787ff27213322087a8911e1b2c5eacf --daemon.peer_rpc http://10.9.194.103:46000 --daemon.peer_ws ws://10.9.194.103:44000 --wallet_daemon.peer_rpc http://10.9.194.103:18082 
 ```
+## 说明
+- contract/dex.cpp 交易所合约源码
+- doc/Dexcentralized exchange.pdf 交易所设计方案
 
 ## 客户端数据库
-客户端启动后，将订单与交易数据存储在`dex<合约地址>.db`文件下。数据格式为`sqlite3`
+客户端将订单与交易数据存储在`dex<合约地址>.db`文件下。数据格式为`sqlite3`
 ### 订单数据库表名
 `order_models`
 
-### 数据库字段格式
+### 数据库字段格式(gorm)
 ````
-HashID       string          `gorm:"primary_key;type:char(66)"`
-TokenGet     string          `gorm:"type:char(42);not null"`
-AmountGet    string          `gorm:"not null"`
-TokenGive    string          `gorm:"type:char(42);not null"`
-AmountGive   string          `gorm:"not null"`
-Nonce        sql.NullInt64   `gorm:"not null"`
-Expires      sql.NullInt64   `gorm:"not null"`
-Maker        string          `gorm:"type:char(42);not null"`
-R            string          `gorm:"type:char(34);not null"`
-S            string          `gorm:"type:char(34);not null"`
-V            string          `gorm:"type:char(4);not null"`
-State        sql.NullInt64   `gorm:"not null"` //0:Sending(not save in block)  1:Trading  2:Finish(Cancel)
-Price        sql.NullFloat64 `gorm:"type:numeric(225,20);not null"`
-FilledAmount string          `gorm:"not null"` //order has filled amount
+//OrderModel Order DateBase
+type OrderModel struct {
+	HashID       string          `gorm:"primary_key;type:char(66)"`     //Order HashID
+	TokenGet     string          `gorm:"type:char(42);not null"`        //Get Token Address
+	AmountGet    string          `gorm:"not null"`                      //Get Token Amount
+	TokenGive    string          `gorm:"type:char(42);not null"`        //Give Token Address
+	AmountGive   string          `gorm:"not null"`                      //Give Token Amount
+	Nonce        sql.NullInt64   `gorm:"not null"`                      //Nonce
+	Expires      sql.NullInt64   `gorm:"not null"`                      //Expire time (Unix Timestamp)
+	Maker        string          `gorm:"type:char(42);not null"`        //Maker Address
+	R            string          `gorm:"type:char(34);not null"`        //Sign R
+	S            string          `gorm:"type:char(34);not null"`        //Sign S
+	V            string          `gorm:"type:char(4);not null"`         //Sign V
+	State        sql.NullInt64   `gorm:"not null"`                      //0:Sending(not save in block)  1:Trading  2:Finish(Cancel)
+	Price        sql.NullFloat64 `gorm:"type:numeric(225,20);not null"` //Order Price Calculated from AmountGive and AmountGet
+	FilledAmount string          `gorm:"not null"`                      //Order FilledAmount default:0
 ````
-hash_id|token_get|amount_get|token_give|amount_give|nonce|expires|maker|r|s|v|state|price|filled_amount
+SQL表名
 
-### 订单数据库表名
+`hash_id|token_get|amount_get|token_give|amount_give|nonce|expires|maker|r|s|v|state|price|filled_amount`
+
+### 历史交易数据库表名
 `trade_models`
-### 数据库字段格式
+### 数据库字段格式(gorm)
 ````
-gorm.Model
-HashID       string        `gorm:"type:char(66);FOREIGNKEY"` //Order Hash
-DealAmount   string        `gorm:"not null"`                 //Deal amount
-FilledAmount string        `gorm:"not null"`
-BlockNum     sql.NullInt64 `gorm:"not null"`               //Deal BlockNum
-TxHash       string        `gorm:"type:char(66);not null"` //Deal Tx hash
-Taker        string        `gorm:"type:char(42);not null"`
+//TradeModel Trade history DateBase
+type TradeModel struct {
+	gorm.Model
+	HashID       string        `gorm:"type:char(66);FOREIGNKEY"` //Order Hash
+	DealAmount   string        `gorm:"not null"`                 //Deal amount
+	FilledAmount string        `gorm:"not null"`                 //Trade Amount
+	BlockNum     sql.NullInt64 `gorm:"not null"`                 //Deal BlockNum
+	TxHash       string        `gorm:"type:char(66);not null"`   //Deal Tx hash
+	Taker        string        `gorm:"type:char(42);not null"`   //Taker Address
+}
 ````
-id|created_at|updated_at|deleted_at|hash_id|deal_amount|filled_amount|block_num|tx_hash|taker
+
+SQL表名
+
+`id|created_at|updated_at|deleted_at|hash_id|deal_amount|filled_amount|block_num|tx_hash|taker`
 
 #### 相关查询SQL例子
+
+`sqlite3 -line dex0x....db 'select * from order_models;'`
 ##### 查询所有的订单
 `select * from order_models;`
 
@@ -68,7 +92,7 @@ id|created_at|updated_at|deleted_at|hash_id|deal_amount|filled_amount|block_num|
 `select * from trade_models t JOIN order_models o ON t.hash_id = o.hash_id where o.token_get='0xd8b9c3ea884bccdd67c1d9dd115b75cf9f969879' and o.token_give='0xcbf2a8db3ca6499db97d447f21a0a57198387f61';`
 
 ##### 查询指定交易对,最新的成交价格(当前市价)
-`select * from trade_models t JOIN order_models o ON t.hash_id = o.hash_id where o.token_get='0xd8b9c3ea884bccdd67c1d9dd115b75cf9f969879' and o.token_give='0xcbf2a8db3ca6499db97d447f21a0a57198387f61' order by  block_num desc limit 1 ;`
+`select price from trade_models t JOIN order_models o ON t.hash_id = o.hash_id where o.token_get='0xd8b9c3ea884bccdd67c1d9dd115b75cf9f969879' and o.token_give='0xcbf2a8db3ca6499db97d447f21a0a57198387f61' order by  block_num desc limit 1 ;`
 
 ##### 查询所有的交易
 `select * from trade_models;`
@@ -256,3 +280,11 @@ curl -s -X POST http://127.0.0.1:18804 -d '{"jsonrpc":"2.0","method":"wlt_deposi
 ```
 {"jsonrpc":"2.0","id":67,"result":"0x227c50d045ca22ba74ac1a5662812905c4a7d4f194925a131a4130d121d814f4"}
 ```
+
+
+### TODO 
+- 可视化客户端开发(价格走势、线上未成交订单、实时价格显示)
+- 合约增加成交手续费,作为客户端的运营成本收入
+- 支持非本地linkchain节点的数据查询,支持节点钱包离线查询
+- 移动端客户端开发
+
